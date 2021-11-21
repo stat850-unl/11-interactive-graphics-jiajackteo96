@@ -1,49 +1,60 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
+cocktaildata <- readr::read_csv('https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2020/2020-05-26/cocktails.csv')
+cocktails <- subset(cocktaildata, select = -c(row_id, date_modified, id_drink, drink_thumb, iba, video) )
 library(shiny)
-
-# Define UI for application that draws a histogram
+require(ggplot2)
+require(dplyr)
 ui <- fluidPage(
-
-    # Application title
-    titlePanel("Old Faithful Geyser Data"),
-
-    # Sidebar with a slider input for number of bins 
-    sidebarLayout(
-        sidebarPanel(
-            sliderInput("bins",
-                        "Number of bins:",
-                        min = 1,
-                        max = 50,
-                        value = 30)
+    titlePanel("Cocktail"),
+    fluidRow(
+        column(4,
+               selectInput("name",
+                           "Name:",
+                           c("All",
+                             unique(as.character(cocktails$drink))))
         ),
-
-        # Show a plot of the generated distribution
-        mainPanel(
-           plotOutput("distPlot")
+        column(4,
+               selectInput("type",
+                           "Type:",
+                           c("All",
+                             unique(as.character(cocktails$alcoholic))))
+        ),
+        column(4,
+               selectInput("category",
+                           "Category:",
+                           c("All",
+                             unique(as.character(cocktails$category))))
+        ),
+        column(4,
+               selectInput("ingredient",
+                           "Ingredient:",
+                           c("All",
+                             unique(as.character(cocktails$ingredient))))
         )
-    )
+    ),
+    DT::dataTableOutput("table")
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-
-    output$distPlot <- renderPlot({
-        # generate bins based on input$bins from ui.R
-        x    <- faithful[, 2]
-        bins <- seq(min(x), max(x), length.out = input$bins + 1)
-
-        # draw the histogram with the specified number of bins
-        hist(x, breaks = bins, col = 'darkgray', border = 'white')
-    })
+    output$table <- DT::renderDataTable(DT::datatable({
+        data <- cocktails
+        if (input$name != "All") {
+            data <- data[data$drink == input$name,]
+        }
+        if (input$type != "All") {
+            data <- data[data$alcoholic == input$type,]
+        }
+        if (input$category != "All") {
+            data <- data[data$category == input$category,]
+        }
+        if (input$ingredient != "All") {
+            data <- data[data$ingredient == input$ingredient,]
+        }
+        data
+    }))
 }
 
-# Run the application 
-shinyApp(ui = ui, server = server)
+
+library(rsconnect)
+rsconnect::setAccountInfo(name='jiajackteo', token='E03E9C977558A204162248DACEC27BC9', secret='/kbbSPCaHkhlLD5wgmhVjVMho5Cu177RgOQU6feK')
+rsconnect::deployApp()
+    
